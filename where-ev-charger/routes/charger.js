@@ -4,10 +4,10 @@ var router = express.Router();
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-    res.redirect('/get_charger_list');
+    res.redirect('/list');
 });
 
-router.get('/get_charger_list', function(req, res, next) {
+router.get('/list', function(req, res, next) {
     
 });
 
