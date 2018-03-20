@@ -20,13 +20,6 @@ const client = new Client({
 
 getEvGovernmentSite();
 
-// var connection = mysql.createConnection({
-//     host: 'localhost',
-//     user: 'root',
-//     password: 'gjalstjd0627!',
-//     database: 'where_ev_charger'
-// });
-
 function getEvGovernmentSite() {
     var option = {
         uri: end_point,
