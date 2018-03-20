@@ -1,16 +1,31 @@
 // http://www.ev.or.kr/portal/monitor/chargerList?orgme=N&orgetc=Y&_=1521353239485
+String.prototype.format = function () {
+    var args = [].slice.call(arguments);
+    return this.replace(/(\{\d+\})/g, function (a){
+        return args[+(a.substr(1,a.length-2))||0];
+    });
+};
 
-var request = require('request-promise');
-var admin = require('firebase-admin');
-var service_account = require('../serviceAccountKey.json');
+var request_promise = require('request-promise');
+var request = require('request');
+var fs = require('fs');
+
 var end_point = 'http://www.ev.or.kr/portal/monitor/chargerList';
+var connectionString = "postgres://localhost:5432/where-ev-charger";
+const { Client } = require('pg');
 
-admin.initializeApp({
-    credential: admin.credential.cert(service_account)
+const client = new Client({
+    connectionString: connectionString
 });
-  
-var db = admin.firestore();
 
+getEvGovernmentSite();
+
+// var connection = mysql.createConnection({
+//     host: 'localhost',
+//     user: 'root',
+//     password: 'gjalstjd0627!',
+//     database: 'where_ev_charger'
+// });
 
 function getEvGovernmentSite() {
     var option = {
@@ -22,34 +37,71 @@ function getEvGovernmentSite() {
         }
     };
 
-    request(option)
+    request_promise(option)
         .then(function(result) {
-            saveToServer(result);
+            console.log('success response data');
+            insertData(result);
         }).catch(function(error) {
             console.log("parse", "parse error occured: " + error);
         });
 }
 
-function saveToServer(result) {
-    if (result == null) {
+function insertData(data) {
+    if (data == null) {
         return;
     }
 
-    arrResult = result.chargerList;
-    for (const key in arrResult) {
-        if (arrResult.hasOwnProperty(key)) {
-            const element = arrResult[key];
-            
-            addCloudFirestoreData(element);
+    var query = 'INSERT INTO charger (adr, chgeMange, cid, cst, ctp, distant, dro, hol, park, ' + 
+        'sid, skind, skinds, skindt, snm, tst, utime, lat, lng, geom) VALUES ';
+    for (var key in data.chargerList) {
+        var element = data.chargerList[key];
+        
+        if (key != 0) {
+            query += ", ";
+        }
+
+        query += "(";
+        query += "'" + element.adr + "', ";
+        query += "'" + element.chgeMange + "', ";
+        query += "'" + element.cid + "', ";
+        query += "'" + element.cst + "', ";
+        query += "'" + element.ctp + "', ";
+        query += "'" + element.distant + "', ";
+        query += "'" + element.dro + "', ";
+        query += "'" + element.hol + "', ";
+        query += "'" + element.park + "', ";
+        query += "'" + element.sid + "', ";
+        query += "'" + element.skind + "', ";
+        query += "'" + element.skinds + "', ";
+        query += "'" + element.skindt + "', ";
+        query += "'" + element.snm + "', ";
+        query += "'" + element.tst + "', ";
+        query += "'" + element.utime + "', ";
+        
+        var lat = element.x;
+        var lng = element.y;
+
+        if (lat != null && lat != undefined && lat != '' && lng != null && lng != undefined && lng != '') {
+            query += "'" + lat + "', ";
+            query += "'" + lng + "', ";
+            query += "ST_SetSRID(ST_MakePoint(" + lng + ", " + lat + "), 4326) )";
+        } else {
+            query += "'" + 0.0 + "', ";
+            query += "'" + 0.0 + "', ";
+            query += "ST_SetSRID(ST_MakePoint(" + 0.0 + ", " + 0.0 + "), 4326) )";
         }
     }
-}
 
-function addCloudFirestoreData(chargerModel) {
-    var collectionRef = db.collection('charger');
-    collectionRef.add(chargerModel).then(function(documentRef) {
-        console.log('success add firestore', documentRef.id);
+    fs.writeFile('/Users/minsung/Desktop/Workspace/where-ev-charger-front-service/query.txt', query, err => {
+        if (err) {
+            console.log('error', err);
+        }
     });
+
+    client.connect();
+    client.query(query)
+        .then(res => console.log('query success!'))
+        .catch(e => {console.log(e.stack)});
 }
 
-getEvGovernmentSite();
+// getEvGovernmentSite();
