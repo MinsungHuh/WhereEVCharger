@@ -1,4 +1,3 @@
-// http://www.ev.or.kr/portal/monitor/chargerList?orgme=N&orgetc=Y&_=1521353239485
 String.prototype.format = function () {
     var args = [].slice.call(arguments);
     return this.replace(/(\{\d+\})/g, function (a){
@@ -96,5 +95,3 @@ function insertData(data) {
         .then(res => console.log('query success!'))
         .catch(e => {console.log(e.stack)});
 }
-
-// getEvGovernmentSite();
