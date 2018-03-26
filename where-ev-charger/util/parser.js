@@ -6,12 +6,11 @@ String.prototype.format = function () {
 };
 
 var request_promise = require('request-promise');
-var request = require('request');
 var fs = require('fs');
+var Client = require('pg');
 
 var end_point = 'http://www.ev.or.kr/portal/monitor/chargerList';
 var connectionString = "postgres://localhost:5432/where-ev-charger";
-const { Client } = require('pg');
 
 const client = new Client({
     connectionString: connectionString
@@ -92,6 +91,12 @@ function insertData(data) {
 
     client.connect();
     client.query(query)
-        .then(res => console.log('query success!'))
-        .catch(e => {console.log(e.stack)});
+        .then(res => { 
+            console.log('query success!');
+            client.end();
+         })
+        .catch(e => { 
+            console.log(e.stack);
+            client.end();
+         });
 }
